@@ -1,9 +1,9 @@
 import { UserType } from '../controllers/RoomsController';
 
 export enum CellValue {
-	circle,
-	cross,
-	empty
+	circle = 'circle',
+	cross = 'cross',
+	empty = 'empty'
 }
 
 export type CellType = {
@@ -29,10 +29,14 @@ class BoardService {
 		this.players.shift();
 	}
 
-	initBoard(): void {
-		for (let i = 0; i++; i < 9) {
-			this.board.push({value: CellValue.empty, index: i});
+	initBoard(): string {
+		for (let i = 0; i < 9; i++) {
+			const cell = {value: CellValue.empty, index: i};
+
+			this.board.push(cell);
 		}
+
+		return 'Board initialize';
 	}
 
 	getBoard(): Array<CellType> {

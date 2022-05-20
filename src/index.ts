@@ -15,10 +15,6 @@ io.on('connection', (socket: Socket) => {
 	rooms.addToQueue({
 		id: socket.id,
 	}, socket);
-
-	socket.on('message', ({message}) => {
-		io.emit('message', message);
-	});
 });
 
 httpServer.listen(port, () => {

@@ -14,23 +14,20 @@ class BoardController {
 	private socket: Socket;
 	private service;
 
-	constructor(io: Server, socket: Socket , players: Array<UserType>) {
+	constructor(io: Server, socket: Socket, players: Array<UserType>) {
 		this.io = io;
 		this.socket = socket;
 		this.service = new BoardService(players);
 	}
 
 	initBoard(): void {
-		this.socket.on(BoardEvents.initBoard, ({message}) => {
-			this.service.initBoard();
-		});
+		this.io.emit('message', this.service.initBoard());
 		this.getBoard();
+		this.listenMoves();
 	}
 
 	private getBoard(): void {
-		this.socket.on(BoardEvents.getBoard, () => {
-			this.io.emit(BoardEvents.getBoard, this.service.getBoard());
-		});
+		this.io.emit('message', this.service.getBoard());
 	}
 
 	restart(): void {
@@ -40,9 +37,10 @@ class BoardController {
 		});
 	}
 
-	makeMove(moveData: CellType): void {
-		this.socket.on(BoardEvents.makeMove, () => {
-			this.io.emit(BoardEvents.makeMove, this.service.makeMove(moveData));
+	listenMoves(): void {
+		this.socket.on(BoardEvents.makeMove, (moveData: CellType) => {
+			this.io.emit('message', this.service.makeMove(moveData));
+			this.getBoard();
 		});
 	}
 }
