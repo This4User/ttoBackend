@@ -11,10 +11,10 @@ const io: Server = new Server(httpServer);
 const rooms = new RoomsController(io);
 
 io.on('connection', (socket: Socket) => {
-
 	rooms.addToQueue({
 		id: socket.id,
-	}, socket);
+		socket,
+	});
 });
 
 httpServer.listen(port, () => {

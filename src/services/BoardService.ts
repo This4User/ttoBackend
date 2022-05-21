@@ -14,19 +14,20 @@ export type CellType = {
 class BoardService {
 	private board: Array<CellType> = [];
 	private readonly players: Array<UserType>;
-	private activePlayer: UserType;
+
+	private activePlayer: boolean = false;
 
 	constructor(players: Array<UserType>) {
 		this.players = players;
-		this.activePlayer = this.players[0];
-		this.players.shift();
 		this.initBoard();
 	}
 
+	getActivePlayer(): UserType {
+		return this.players[Number(this.activePlayer)]
+	}
+
 	private changeActivePlayer(): void {
-		this.players.push(this.activePlayer);
-		this.activePlayer = this.players[0];
-		this.players.shift();
+		this.activePlayer = !this.activePlayer;
 	}
 
 	initBoard(): string {

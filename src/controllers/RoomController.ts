@@ -1,24 +1,18 @@
-import { Server, Socket } from 'socket.io';
+import { Server } from 'socket.io';
 import BoardController from './BoardController';
+import { UserType } from './RoomsController';
 
 export type RoomType = {
 	id: string;
-	first_player_id: string;
-	second_player_id: string;
+	players: Array<UserType>
 };
 
 class RoomController {
 	private board;
 	private readonly roomId: string;
 
-	constructor(roomData: RoomType, io: Server, socket: Socket) {
-		this.board = new BoardController(io, socket, [
-			{
-				id: roomData.first_player_id,
-			}, {
-				id: roomData.second_player_id,
-			},
-		]);
+	constructor(roomData: RoomType, io: Server) {
+		this.board = new BoardController(io, roomData);
 		this.roomId = roomData.id;
 	}
 

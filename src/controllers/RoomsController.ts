@@ -4,6 +4,7 @@ import RoomController, { RoomType } from './RoomController';
 
 export type UserType = {
 	id: string;
+	socket: Socket;
 };
 
 class RoomsController {
@@ -16,14 +17,14 @@ class RoomsController {
 		this.io = io;
 	}
 
-	addToQueue(user: UserType, socket: Socket): void {
+	addToQueue(user: UserType): void {
 		this.queue.push(user);
 		console.log(`User with id: ${user.id} added to queue`);
 
 		if (this.queue.length >= 2) {
 			this.createRoom();
 			this.activeRooms.forEach(room => {
-				const roomController = new RoomController(room, this.io, socket);
+				const roomController = new RoomController(room, this.io);
 				roomController.startGame();
 			});
 		}
@@ -37,16 +38,17 @@ class RoomsController {
 	private createRoom(): void {
 		const roomData: RoomType = {
 			id: generateRoomId(),
-			first_player_id: this.queue[0].id,
-			second_player_id: this.queue[1].id,
+			players: [this.queue[0], this.queue[1]],
 		};
 
 		this.activeRooms.push(roomData);
 
-		this.removeFromQueue(roomData.first_player_id);
-		this.removeFromQueue(roomData.second_player_id);
+		roomData.players.forEach(({socket, id}) => {
+			socket.join(roomData.id);
+			this.removeFromQueue(id);
+		});
 
-		console.log(`Created new room: ${JSON.stringify(roomData)}`);
+		console.log(`Created new room: ${roomData.id}`);
 	};
 }
 
