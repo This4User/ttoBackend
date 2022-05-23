@@ -6,7 +6,8 @@ export enum BoardEvents {
 	initBoard = 'initBoard',
 	makeMove = 'makeMove',
 	restart = 'restart',
-	getBoard = 'getBoard'
+	getBoard = 'getBoard',
+	getPlayerSign = 'getPlayerSign'
 }
 
 class BoardController {
@@ -21,13 +22,16 @@ class BoardController {
 	}
 
 	initBoard(): void {
-		this.io.to(this.roomData.id).emit('message', this.service.initBoard());
+		this.io.to(this.roomData.id).emit(BoardEvents.initBoard, this.service.initBoard());
+		this.roomData.players.forEach(player => {
+			this.io.to(player.id).emit(BoardEvents.getPlayerSign, this.service.getPlayerSign(player.id));
+		});
 		this.getBoard();
 		this.listenMoves();
 	}
 
 	private getBoard(): void {
-		this.io.to(this.roomData.id).emit('message', this.service.getBoard());
+		this.io.to(this.roomData.id).emit(BoardEvents.getBoard, this.service.getBoard());
 	}
 
 	restart(): void {
@@ -47,7 +51,7 @@ class BoardController {
 				const isCanMove = isActivePlayer && isMoveExist;
 
 				if (isCanMove) {
-					this.io.to(this.roomData.id).emit('message', this.service.makeMove(moveData));
+					this.io.to(this.roomData.id).emit(BoardEvents.makeMove, this.service.makeMove(moveData));
 					this.getBoard();
 				}
 			});

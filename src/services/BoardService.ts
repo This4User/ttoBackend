@@ -14,6 +14,7 @@ export type CellType = {
 class BoardService {
 	private board: Array<CellType> = [];
 	private readonly players: Array<UserType>;
+	private  winnerSign: CellValue = CellValue.empty;
 
 	private activePlayer: boolean = false;
 
@@ -31,10 +32,11 @@ class BoardService {
 	}
 
 	initBoard(): string {
-		for (let i = 0; i < 9; i++) {
-			const cell = {value: CellValue.empty, index: i};
-
-			this.board.push(cell);
+		if (this.board.length < 9){
+			for (let i = 0; i < 9; i++) {
+				const cell = {value: CellValue.empty, index: i};
+				this.board.push(cell);
+			}
 		}
 
 		return 'Board initialize';
@@ -42,6 +44,15 @@ class BoardService {
 
 	getBoard(): Array<CellType> {
 		return this.board;
+	}
+
+	getPlayerSign(userId: string){
+		switch (userId){
+			case this.players[0].id:
+				return CellValue.circle;
+			case this.players[1].id:
+				return CellValue.cross
+		}
 	}
 
 	makeMove(moveData: CellType): CellValue {
@@ -65,17 +76,16 @@ class BoardService {
 			[0, 4, 8],
 			[2, 4, 6],
 		];
-		let winnerSign: CellValue = CellValue.empty;
 		for (let i = 0; i < lines.length; i++) {
 			const [a, b, c] = lines[i];
 			if (this.board[a].value !== CellValue.empty
 				&& this.board[a].value === this.board[b].value
 				&& this.board[a].value === this.board[c].value) {
-				winnerSign = this.board[a].value;
+				this.winnerSign = this.board[a].value;
 			}
 		}
 
-		return winnerSign;
+		return this.winnerSign;
 	}
 
 	clearBoard(): void {

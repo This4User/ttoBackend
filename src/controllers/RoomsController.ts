@@ -4,6 +4,7 @@ import RoomController, { RoomType } from './RoomController';
 
 export type UserType = {
 	id: string;
+	name?: string;
 	socket: Socket;
 };
 
