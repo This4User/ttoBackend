@@ -1,13 +1,14 @@
 import { Server } from 'socket.io';
 import BoardService, { CellType, CellValue } from '../services/BoardService';
 import { RoomType } from './RoomController';
+import { UserType } from './RoomsController';
 
 export enum BoardEvents {
 	initBoard = 'initBoard',
 	makeMove = 'makeMove',
-	restart = 'restart',
 	getBoard = 'getBoard',
-	getPlayerSign = 'getPlayerSign'
+	getPlayerSign = 'getPlayerSign',
+	gameFinished = 'gameFinished',
 }
 
 class BoardController {
@@ -34,28 +35,32 @@ class BoardController {
 		this.io.to(this.roomData.id).emit(BoardEvents.getBoard, this.service.getBoard());
 	}
 
-	restart(): void {
-		this.roomData.players.forEach(({socket}) => {
-			socket.on(BoardEvents.restart, () => {
-				this.service.clearBoard();
-				this.service.initBoard();
+	listenMoves(): void {
+		this.roomData.players.forEach(({socket, id}) => {
+			socket.on(BoardEvents.makeMove, (moveData: CellType) => {
+				const activePayer = this.service.getActivePlayer();
+				const isActivePlayer = id === activePayer.id;
+				const isMoveExist = this.service.getBoard()[moveData.index].value === CellValue.empty;
+				const isCanMove = isActivePlayer && isMoveExist;
+				const winnerSign = this.service.getWinnerSign();
+
+				if (isCanMove && winnerSign === CellValue.empty) {
+					this.io.to(this.roomData.id).emit(BoardEvents.makeMove, this.service.makeMove(moveData));
+					this.getBoard();
+
+					this.checkWin(activePayer);
+				}
 			});
 		});
 	}
 
-	listenMoves(): void {
-		this.roomData.players.forEach(({socket, id}) => {
-			socket.on(BoardEvents.makeMove, (moveData: CellType) => {
-				const isActivePlayer = id === this.service.getActivePlayer().id;
-				const isMoveExist = this.service.getBoard()[moveData.index].value === CellValue.empty;
-				const isCanMove = isActivePlayer && isMoveExist;
+	checkWin(winner: UserType): void {
+		const winnerSign = this.service.getWinnerSign();
+		if (winnerSign !== CellValue.empty) {
+			console.log(`Game in room ${this.roomData.id} ended with winner ${winner.id}`);
 
-				if (isCanMove) {
-					this.io.to(this.roomData.id).emit(BoardEvents.makeMove, this.service.makeMove(moveData));
-					this.getBoard();
-				}
-			});
-		});
+			this.io.to(this.roomData.id).emit(BoardEvents.gameFinished, winner.id);
+		}
 	}
 }
 

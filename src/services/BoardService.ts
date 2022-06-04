@@ -14,7 +14,7 @@ export type CellType = {
 class BoardService {
 	private board: Array<CellType> = [];
 	private readonly players: Array<UserType>;
-	private  winnerSign: CellValue = CellValue.empty;
+	private winnerSign: CellValue = CellValue.empty;
 
 	private activePlayer: boolean = false;
 
@@ -24,7 +24,7 @@ class BoardService {
 	}
 
 	getActivePlayer(): UserType {
-		return this.players[Number(this.activePlayer)]
+		return this.players[Number(this.activePlayer)];
 	}
 
 	private changeActivePlayer(): void {
@@ -32,7 +32,7 @@ class BoardService {
 	}
 
 	initBoard(): string {
-		if (this.board.length < 9){
+		if (this.board.length < 9) {
 			for (let i = 0; i < 9; i++) {
 				const cell = {value: CellValue.empty, index: i};
 				this.board.push(cell);
@@ -46,12 +46,12 @@ class BoardService {
 		return this.board;
 	}
 
-	getPlayerSign(userId: string){
-		switch (userId){
+	getPlayerSign(userId: string) {
+		switch (userId) {
 			case this.players[0].id:
 				return CellValue.circle;
 			case this.players[1].id:
-				return CellValue.cross
+				return CellValue.cross;
 		}
 	}
 
@@ -63,6 +63,10 @@ class BoardService {
 
 		this.changeActivePlayer();
 		return this.checkBoard();
+	}
+
+	getWinnerSign(): CellValue {
+		return this.winnerSign;
 	}
 
 	checkBoard(): CellValue {
