@@ -15,7 +15,7 @@ class BoardService {
 	private board: Array<CellType> = [];
 	private readonly players: Array<UserType>;
 	private winnerSign: CellValue = CellValue.empty;
-	private isPlayerSignCircle = true;
+	private isFirstPlayerSignCircle = true;
 
 	private activePlayer: boolean = false;
 
@@ -23,7 +23,7 @@ class BoardService {
 		this.players = players;
 	}
 
-	getActivePlayer(): UserType {
+	private getActivePlayer(): UserType {
 		return this.players[Number(this.activePlayer)];
 	}
 
@@ -50,7 +50,7 @@ class BoardService {
 	}
 
 	getPlayerSign(userId: string) {
-		if (this.isPlayerSignCircle) {
+		if (this.isFirstPlayerSignCircle) {
 			switch (userId) {
 				case this.players[0].id:
 					return CellValue.circle;
@@ -67,21 +67,44 @@ class BoardService {
 		}
 	}
 
-	makeMove(moveData: CellType): CellValue {
-		this.board[moveData.index] = {
-			value: moveData.value,
-			index: moveData.index,
-		};
-
-		this.changeActivePlayer();
-		return this.checkBoard();
+	getPLayerBySign(playerSign: CellValue): UserType | undefined {
+		if (this.isFirstPlayerSignCircle) {
+			switch (playerSign) {
+				case CellValue.circle :
+					return this.players[0];
+				case CellValue.cross:
+					return this.players[1];
+			}
+		} else {
+			switch (playerSign) {
+				case CellValue.circle :
+					return this.players[1];
+				case  CellValue.cross:
+					return this.players[0];
+			}
+		}
 	}
 
-	getWinnerSign(): CellValue {
-		return this.winnerSign;
+	makeMove(moveData: CellType, playerId: string): UserType | CellValue | undefined {
+		const isCellEmpty = this.board[moveData.index].value === CellValue.empty;
+		const isActivePlayer = this.getActivePlayer().id === playerId;
+		const isCanMove = isCellEmpty && isActivePlayer;
+
+		if (isCanMove) {
+			this.board[moveData.index] = {
+				value: moveData.value,
+				index: moveData.index,
+			};
+
+			this.changeActivePlayer();
+			return this.checkBoard();
+		}
+
+		return undefined;
 	}
 
-	checkBoard(): CellValue {
+	checkBoard(): UserType | CellValue | undefined {
+		const isBoardFull = !this.board.find(cell => cell.value === CellValue.empty);
 		const lines = [
 			[0, 1, 2],
 			[3, 4, 5],
@@ -97,11 +120,15 @@ class BoardService {
 			if (this.board[a].value !== CellValue.empty
 				&& this.board[a].value === this.board[b].value
 				&& this.board[a].value === this.board[c].value) {
-				this.winnerSign = this.board[a].value;
+				const winnerSign = this.board[a].value;
+				return this.getPLayerBySign(winnerSign);
 			}
 		}
+		if (isBoardFull) {
+			return CellValue.empty;
+		}
 
-		return this.winnerSign;
+		return undefined;
 	}
 
 	clearBoard(): void {

@@ -1,6 +1,6 @@
 import { Server } from 'socket.io';
 import BoardService, { CellType, CellValue } from '../services/BoardService';
-import { RoomEvents, RoomType } from './RoomController';
+import { RoomType } from './RoomController';
 import { UserType } from './RoomsController';
 
 export enum BoardEvents {
@@ -39,30 +39,29 @@ class BoardController {
 	listenMoves(): void {
 		this.roomData.players.forEach(({socket, id}) => {
 			socket.on(BoardEvents.makeMove, (moveData: CellType) => {
-				const activePayer = this.service.getActivePlayer();
-				const isActivePlayer = id === activePayer.id;
-				const isMoveExist = this.service.getBoard()[moveData.index].value === CellValue.empty;
-				const isCanMove = isActivePlayer && isMoveExist;
-				const winnerSign = this.service.getWinnerSign();
+				const moveResult = this.service.makeMove(moveData, socket.id);
 
-				if (isCanMove && winnerSign === CellValue.empty) {
-					this.io.to(this.roomData.id).emit(BoardEvents.makeMove, this.service.makeMove(moveData));
-					this.getBoard();
-
-					this.checkWin(activePayer);
+				if (moveResult) {
+					this.checkWin(moveResult);
+				} else {
+					this.io.to(this.roomData.id).emit(BoardEvents.makeMove, moveResult);
 				}
+				this.getBoard();
 			});
 		});
 	}
 
-	checkWin(winner: UserType): void {
-		const winnerSign = this.service.getWinnerSign();
-		const looser = this.roomData.players.find(player => player.id !== winner.id);
-		if (winnerSign !== CellValue.empty && looser) {
-			console.log(`Game in room ${this.roomData.id} ended with winner ${winner.id}`);
+	checkWin(winner: UserType | CellValue): void {
+		if (typeof winner !== 'string') {
+			const looser = this.roomData.players.find(player => player.id !== winner.id);
+			if (looser) {
+				console.log(`Game in room ${this.roomData.id} ended with winner ${winner.id}`);
 
-			this.io.to(winner.id).emit(BoardEvents.gameFinished, true);
-			this.io.to(looser.id).emit(BoardEvents.gameFinished, false);
+				this.io.to(winner.id).emit(BoardEvents.gameFinished, true);
+				this.io.to(looser.id).emit(BoardEvents.gameFinished, false);
+			}
+		} else {
+			this.io.to(this.roomData.id).emit(BoardEvents.gameFinished, winner);
 		}
 	}
 }
