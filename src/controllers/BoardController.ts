@@ -1,6 +1,6 @@
 import { Server } from 'socket.io';
 import BoardService, { CellType, CellValue } from '../services/BoardService';
-import { RoomType } from './RoomController';
+import { RoomEvents, RoomType } from './RoomController';
 import { UserType } from './RoomsController';
 
 export enum BoardEvents {
@@ -23,6 +23,7 @@ class BoardController {
 	}
 
 	initBoard(): void {
+		this.service.initBoard;
 		this.io.to(this.roomData.id).emit(BoardEvents.initBoard, this.service.initBoard());
 		this.roomData.players.forEach(player => {
 			this.io.to(player.id).emit(BoardEvents.getPlayerSign, this.service.getPlayerSign(player.id));
@@ -56,10 +57,12 @@ class BoardController {
 
 	checkWin(winner: UserType): void {
 		const winnerSign = this.service.getWinnerSign();
-		if (winnerSign !== CellValue.empty) {
+		const looser = this.roomData.players.find(player => player.id !== winner.id);
+		if (winnerSign !== CellValue.empty && looser) {
 			console.log(`Game in room ${this.roomData.id} ended with winner ${winner.id}`);
 
-			this.io.to(this.roomData.id).emit(BoardEvents.gameFinished, winner.id);
+			this.io.to(winner.id).emit(BoardEvents.gameFinished, true);
+			this.io.to(looser.id).emit(BoardEvents.gameFinished, false);
 		}
 	}
 }

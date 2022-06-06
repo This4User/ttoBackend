@@ -1,6 +1,6 @@
 import { Server, Socket } from 'socket.io';
 import generateRoomId from '../utils/generateRoomId';
-import RoomController, { RoomType } from './RoomController';
+import RoomController, { RoomEvents, RoomType } from './RoomController';
 
 export type UserType = {
 	id: string;
@@ -11,23 +11,21 @@ export type UserType = {
 class RoomsController {
 
 	private queue: Array<UserType> = [];
-	private activeRooms: Array<RoomType> = [];
+	private activeRooms: Array<RoomController> = [];
 	private readonly io: Server;
 
 	constructor(io: Server) {
 		this.io = io;
 	}
 
-	addToQueue(user: UserType): void {
-		this.queue.push(user);
-		console.log(`User with id: ${user.id} added to queue`);
+	addToQueue(player: UserType): void {
+		if (!this.queue.includes(player)) {
+			this.queue.push(player);
+			console.log(`User with id: ${player.id} added to queue`);
+		}
 
 		if (this.queue.length >= 2) {
 			this.createRoom();
-			const roomData = this.activeRooms[this.activeRooms.length - 1];
-			const roomController = new RoomController(roomData, this.io);
-			roomController.startGame();
-			roomController.listenRoomEvents();
 		}
 	};
 
@@ -48,23 +46,41 @@ class RoomsController {
 			socket.join(roomData.id);
 			this.removeFromQueue(id);
 		});
+		const roomController = new RoomController(roomData, this.io);
+		roomController.startGame();
 
-		this.activeRooms.push(roomData);
+		this.activeRooms.push(roomController);
 
 		console.log(`Created new room: ${roomData.id}`);
-		console.log(this.activeRooms);
+		this.activeRooms.forEach(room => {
+			console.log(`Room: ${room.id}`);
+		});
 	};
 
-	private deleteRoom(): void {
-		this.io.on('leaveRoom', (roomID) => {
-			this.activeRooms
-				.find(room => room.id = roomID)?.players
-				.forEach(player => {
-					player.socket.leave(roomID);
-					this.addToQueue(player);
-				});
-			this.activeRooms.filter(room => room.id !== roomID);
-		});
+	deleteRoom(userId: string): void {
+		const room = this.activeRooms
+			.find(room => {
+				const players = room.players.find(player => player.id === userId);
+				if (players) {
+					return room;
+				}
+			});
+
+		if (room) {
+			this.io.to(room.id).emit(RoomEvents.leave);
+			if (this.queue.length > 0) {
+				console.log(`Was trying to leave room: ${room.id}`);
+				this.activeRooms = this.activeRooms.filter(activeRoom => activeRoom.id !== room.id);
+				console.log(`Room with id: ${room.id} was deleted`);
+				room.players
+					.forEach(player => {
+						player.socket.leave(room.id);
+						this.addToQueue(player);
+					});
+			} else {
+				room.startGame();
+			}
+		}
 	}
 }
 

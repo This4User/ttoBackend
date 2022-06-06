@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { Server, Socket } from 'socket.io';
+import { RoomEvents } from './controllers/RoomController';
 import RoomsController from './controllers/RoomsController';
 
 const express = require('express');
@@ -13,9 +14,9 @@ const httpServer = require('http').createServer(app);
 const io: Server = new Server(httpServer);
 
 app.use(cors());
-app.use((req:Request, res:Response, next:NextFunction)=> {
-	res.header("Access-Control-Allow-Origin", "*");
-	res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+app.use((req: Request, res: Response, next: NextFunction) => {
+	res.header('Access-Control-Allow-Origin', '*');
+	res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
 	next();
 });
 app.get('/', (req: Request, res: any) => {
@@ -33,7 +34,11 @@ io.on('connection', (socket: Socket) => {
 	});
 	socket.on('disconnect', () => {
 		rooms.removeFromQueue(socket.id);
-		console.log(`User with id ${socket.id} disconnected`)
+		console.log(`User with id ${socket.id} disconnected`);
+	});
+
+	socket.on(RoomEvents.leave, () => {
+		rooms.deleteRoom(socket.id);
 	});
 });
 

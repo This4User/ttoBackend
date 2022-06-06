@@ -15,12 +15,12 @@ class BoardService {
 	private board: Array<CellType> = [];
 	private readonly players: Array<UserType>;
 	private winnerSign: CellValue = CellValue.empty;
+	private isPlayerSignCircle = true;
 
 	private activePlayer: boolean = false;
 
 	constructor(players: Array<UserType>) {
 		this.players = players;
-		this.initBoard();
 	}
 
 	getActivePlayer(): UserType {
@@ -37,6 +37,9 @@ class BoardService {
 				const cell = {value: CellValue.empty, index: i};
 				this.board.push(cell);
 			}
+		} else {
+			this.winnerSign = CellValue.empty;
+			this.board = [];
 		}
 
 		return 'Board initialize';
@@ -47,11 +50,20 @@ class BoardService {
 	}
 
 	getPlayerSign(userId: string) {
-		switch (userId) {
-			case this.players[0].id:
-				return CellValue.circle;
-			case this.players[1].id:
-				return CellValue.cross;
+		if (this.isPlayerSignCircle) {
+			switch (userId) {
+				case this.players[0].id:
+					return CellValue.circle;
+				case this.players[1].id:
+					return CellValue.cross;
+			}
+		} else {
+			switch (userId) {
+				case this.players[1].id:
+					return CellValue.circle;
+				case this.players[0].id:
+					return CellValue.cross;
+			}
 		}
 	}
 
